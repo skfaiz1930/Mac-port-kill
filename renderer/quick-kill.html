@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Quick Kill</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: rgba(20, 20, 23, 0.85);
+      --border: rgba(255, 255, 255, 0.1);
+      --accent: #6c63ff;
+      --text: #f0f0f5;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      -webkit-app-region: drag;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .container {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: 0 15px;
+      gap: 10px;
+      -webkit-app-region: no-drag;
+    }
+    .icon { font-size: 20px; }
+    input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 24px;
+      outline: none;
+      padding: 10px 0;
+    }
+    input::placeholder { color: #5a5a72; opacity: 0.5; }
+    .btn-kill {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-kill:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(108, 99, 255, 0.4); }
+    #status {
+      position: absolute;
+      bottom: 5px;
+      left: 60px;
+      font-size: 10px;
+      color: #9494a8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">⚡</div>
+    <input type="text" id="port-input" placeholder="Port to kill (e.g. 3000)..." autofocus autocomplete="off">
+    <button class="btn-kill" id="kill-btn">KILL</button>
+  </div>
+  <div id="status">Ready</div>
+
+  <script>
+    const input = document.getElementById('port-input');
+    const btn = document.getElementById('kill-btn');
+    const status = document.getElementById('status');
+
+    async function doKill() {
+      const port = input.value.trim();
+      if (!port) return;
+      
+      status.textContent = 'Searching...';
+      const ports = await window.electronAPI.getPorts();
+      const target = ports.find(p => String(p.port) === port);
+
+      if (target) {
+        status.textContent = 'Killing ' + target.processName + '...';
+        const res = await window.electronAPI.killProcess(target.pid);
+        if (res.success) {
+          status.textContent = '✓ Port killed!';
+          setTimeout(() => window.electronAPI.hideWindow(), 600);
+        } else {
+          status.textContent = 'Error: ' + res.error;
+        }
+      } else {
+        status.textContent = 'Port :' + port + ' not found';
+      }
+    }
+
+    btn.onclick = doKill;
+    input.onkeydown = (e) => { 
+      if (e.key === 'Enter') doKill();
+      if (e.key === 'Escape') window.electronAPI.hideWindow();
+    };
+
+    // Auto focus on open
+    window.addEventListener('focus', () => {
+      input.focus();
+      input.select();
+      status.textContent = 'Ready';
+    });
+  </script>
+</body>
+</html>

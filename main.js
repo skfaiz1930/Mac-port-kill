@@ -1,10 +1,11 @@
-const { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut, screen } = require('electron');
 const { exec } = require('child_process');
 const path = require('path');
 
 let mainWindow;
+let quickWindow;
 
-function createWindow() {
+function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 650,
@@ -26,45 +27,67 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-  });
-
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+}
 
-  // Hide window when it loses focus (optional, but very "Spotlight-like")
-  mainWindow.on('blur', () => {
-    if (mainWindow && !mainWindow.webContents.isDevToolsOpened()) {
-      // mainWindow.hide(); // Uncomment if you want it to hide automatically on blur
+function createQuickWindow() {
+  const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
+  
+  quickWindow = new BrowserWindow({
+    width: 600,
+    height: 90,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    center: true,
+    backgroundColor: '#00000000',
+    vibrancy: 'ultra-dark',
+    visualEffectState: 'active',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+    show: false,
+    resizable: false,
+    hasShadow: true,
+    movable: true,
+  });
+
+  quickWindow.loadFile(path.join(__dirname, 'renderer', 'quick-kill.html'));
+
+  quickWindow.on('blur', () => {
+    if (!quickWindow.webContents.isDevToolsOpened()) {
+      quickWindow.hide();
     }
+  });
+
+  quickWindow.on('closed', () => {
+    quickWindow = null;
   });
 }
 
 // ─── Shortcut Toggle ───────────────────────────────────────────────────────
-function toggleWindow() {
-  if (!mainWindow) {
-    createWindow();
-    return;
+function toggleQuickKill() {
+  if (!quickWindow) {
+    createQuickWindow();
   }
 
-  if (mainWindow.isVisible()) {
-    if (mainWindow.isFocused()) {
-      mainWindow.hide();
-    } else {
-      mainWindow.show();
-      mainWindow.focus();
-    }
+  if (quickWindow.isVisible()) {
+    quickWindow.hide();
   } else {
-    mainWindow.show();
-    mainWindow.focus();
+    quickWindow.show();
+    quickWindow.focus();
   }
 }
 
 // ─── IPC: Hide Window ────────────────────────────────────────────────────────
 ipcMain.on('hide-window', () => {
-  if (mainWindow) mainWindow.hide();
+  if (quickWindow && quickWindow.isVisible()) quickWindow.hide();
+  if (mainWindow && mainWindow.isVisible()) mainWindow.hide();
 });
 
 // ─── IPC: Get Ports ──────────────────────────────────────────────────────────
@@ -150,11 +173,12 @@ ipcMain.handle('get-process-info', async (event, pid) => {
 });
 
 app.whenReady().then(() => {
-  createWindow();
+  createMainWindow();
+  createQuickWindow();
 
   // Register Global Shortcut: Cmd + Shift + P
   const ret = globalShortcut.register('CommandOrControl+Shift+P', () => {
-    toggleWindow();
+    toggleQuickKill();
   });
 
   if (!ret) {
@@ -171,8 +195,10 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  else if (mainWindow) {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createMainWindow();
+    createQuickWindow();
+  } else if (mainWindow) {
     mainWindow.show();
     mainWindow.focus();
   }
