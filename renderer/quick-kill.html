@@ -6,66 +6,88 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: rgba(20, 20, 23, 0.85);
-      --border: rgba(255, 255, 255, 0.1);
-      --accent: #6c63ff;
-      --text: #f0f0f5;
+      /* Default (Dark) */
+      --bg: rgba(28, 28, 30, 0.7);
+      --border: rgba(255, 255, 255, 0.12);
+      --accent: #0A84FF;
+      --text: #ffffff;
+      --text-muted: rgba(255, 255, 255, 0.4);
+      --icon-filter: grayscale(1) brightness(1.5);
     }
+    
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: rgba(255, 255, 255, 0.7);
+        --border: rgba(0, 0, 0, 0.1);
+        --accent: #007AFF;
+        --text: #1c1c1e;
+        --text-muted: rgba(0, 0, 0, 0.4);
+        --icon-filter: grayscale(1) brightness(0.2);
+      }
+    }
+
     body {
       margin: 0;
       padding: 0;
       overflow: hidden;
-      font-family: 'Inter', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', sans-serif;
       background: var(--bg);
-      backdrop-filter: blur(25px);
-      -webkit-backdrop-filter: blur(25px);
+      backdrop-filter: blur(40px) saturate(180%);
+      -webkit-backdrop-filter: blur(40px) saturate(180%);
       -webkit-app-region: drag;
       height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid var(--border);
+      /* Subtle border like macOS */
+      box-shadow: inset 0 0 0 1px var(--border), 0 10px 40px rgba(0,0,0,0.3);
       border-radius: 12px;
     }
     .container {
       display: flex;
       align-items: center;
       width: 100%;
-      padding: 0 15px;
-      gap: 10px;
+      padding: 0 16px;
+      gap: 12px;
       -webkit-app-region: no-drag;
     }
-    .icon { font-size: 20px; }
+    .icon { font-size: 18px; filter: var(--icon-filter); }
     input {
       flex: 1;
       background: transparent;
       border: none;
       color: var(--text);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 24px;
+      font-size: 15px;
+      font-weight: 400;
       outline: none;
-      padding: 10px 0;
+      padding: 8px 0;
+      letter-spacing: -0.01em;
     }
-    input::placeholder { color: #5a5a72; opacity: 0.5; }
+    input::placeholder { color: var(--text-muted); font-weight: 400; }
     .btn-kill {
       background: var(--accent);
       color: white;
       border: none;
-      padding: 8px 18px;
-      border-radius: 8px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.1s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
-    .btn-kill:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(108, 99, 255, 0.4); }
+    .btn-kill:hover { background: #409CFF; box-shadow: 0 0 10px rgba(10, 132, 255, 0.4); }
+    .btn-kill:active { background: #0076E5; transform: scale(0.98); }
     #status {
       position: absolute;
-      bottom: 5px;
-      left: 60px;
-      font-size: 10px;
-      color: #9494a8;
+      bottom: 2px;
+      left: 16px;
+      font-size: 8px;
+      font-weight: 500;
+      color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      pointer-events: none;
     }
   </style>
 </head>

@@ -36,15 +36,15 @@ function createQuickWindow() {
   const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
   
   quickWindow = new BrowserWindow({
-    width: 600,
-    height: 90,
+    width: 550,
+    height: 55,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
     skipTaskbar: true,
     center: true,
     backgroundColor: '#00000000',
-    vibrancy: 'ultra-dark',
+    vibrancy: 'window',
     visualEffectState: 'active',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -60,9 +60,8 @@ function createQuickWindow() {
   quickWindow.loadFile(path.join(__dirname, 'renderer', 'quick-kill.html'));
 
   quickWindow.on('blur', () => {
-    if (!quickWindow.webContents.isDevToolsOpened()) {
-      quickWindow.hide();
-    }
+    // Aggressively hide on blur (click outside)
+    quickWindow.hide();
   });
 
   quickWindow.on('closed', () => {
