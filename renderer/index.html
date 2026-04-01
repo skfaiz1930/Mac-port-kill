@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Port Kill</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Title Bar -->
+  <div class="title-bar" id="title-bar">
+    <div class="title-bar-drag"></div>
+    <div class="title-bar-center">
+      <span class="app-icon">⚡</span>
+      <span class="app-title">Port Kill</span>
+    </div>
+  </div>
+
+  <!-- Main Layout -->
+  <div class="app-container">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="status-dot" id="status-dot"></div>
+        <span class="status-label" id="status-label">Live</span>
+        <button class="refresh-btn" id="refresh-btn" title="Refresh now">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M23 4v6h-6M1 20v-6h6"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-label">Active Ports</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-processes">—</div>
+          <div class="stat-label">Processes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-tcp">—</div>
+          <div class="stat-label">TCP</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-udp">—</div>
+          <div class="stat-label">UDP</div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-title">Auto Refresh</div>
+        <div class="refresh-options">
+          <button class="refresh-option active" data-interval="3000">3s</button>
+          <button class="refresh-option" data-interval="5000">5s</button>
+          <button class="refresh-option" data-interval="10000">10s</button>
+          <button class="refresh-option" data-interval="0">Off</button>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-title">Filter Protocol</div>
+        <div class="refresh-options">
+          <button class="filter-proto active" data-proto="ALL">All</button>
+          <button class="filter-proto" data-proto="TCP">TCP</button>
+          <button class="filter-proto" data-proto="UDP">UDP</button>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="last-refresh" id="last-refresh">Never refreshed</div>
+        <div class="countdown-bar">
+          <div class="countdown-fill" id="countdown-fill"></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="search-wrapper">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="text" id="search-input" class="search-input" placeholder="Search port, process, or PID…" autocomplete="off" />
+          <button class="search-clear" id="search-clear" style="display:none">✕</button>
+        </div>
+        <div class="toolbar-right">
+          <span class="result-count" id="result-count"></span>
+          <button class="kill-all-btn" id="kill-all-btn" title="Kill all filtered processes">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+            </svg>
+            Kill All
+          </button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrapper">
+        <table class="port-table" id="port-table">
+          <thead>
+            <tr>
+              <th class="sortable" data-col="port">Port <span class="sort-arrow active asc" id="sort-port">↑</span></th>
+              <th class="sortable" data-col="processName">Process <span class="sort-arrow" id="sort-processName">↕</span></th>
+              <th class="sortable" data-col="pid">PID <span class="sort-arrow" id="sort-pid">↕</span></th>
+              <th class="sortable" data-col="protocol">Protocol <span class="sort-arrow" id="sort-protocol">↕</span></th>
+              <th class="sortable" data-col="address">Address <span class="sort-arrow" id="sort-address">↕</span></th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="port-tbody">
+            <tr class="loading-row" id="loading-row">
+              <td colspan="6">
+                <div class="loading-state">
+                  <div class="spinner"></div>
+                  <span>Loading ports…</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" id="empty-state" style="display:none;">
+        <div class="empty-icon">🎉</div>
+        <div class="empty-title">All Clear!</div>
+        <div class="empty-subtitle">No ports are listening right now</div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Kill Confirmation Modal -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal" id="modal">
+      <div class="modal-icon">⚠️</div>
+      <h2 class="modal-title">Kill Process?</h2>
+      <p class="modal-desc" id="modal-desc"></p>
+      <div class="modal-detail" id="modal-detail"></div>
+      <div class="modal-actions">
+        <button class="btn btn-cancel" id="modal-cancel">Cancel</button>
+        <button class="btn btn-kill" id="modal-confirm">Kill -9</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Panel -->
+  <div class="detail-panel" id="detail-panel">
+    <div class="detail-header">
+      <span class="detail-title" id="detail-title">Process Info</span>
+      <button class="detail-close" id="detail-close">✕</button>
+    </div>
+    <div class="detail-body" id="detail-body"></div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
