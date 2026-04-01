@@ -382,10 +382,38 @@ refreshBtn.addEventListener('click', () => {
 });
 
 // ── Search ─────────────────────────────────────────────────────────────────
+searchInput.addEventListener('keydown', async (e) => {
+  if (e.key === 'Enter') {
+    const q = state.search.trim();
+    if (!q) return;
+
+    // Is it an exact port match?
+    const target = state.filtered.length === 1 ? state.filtered[0] : state.filtered.find(p => String(p.port) === q);
+
+    if (target) {
+      const result = await window.electronAPI.killProcess(target.pid);
+      if (result.success) {
+        showToast(`✓ Killed ${target.processName} on :${target.port}`, 'success');
+        // Hide window after successful kill (Spotlight/Wispr style)
+        setTimeout(() => window.electronAPI.hideWindow(), 500);
+        await fetchPorts();
+      } else {
+        showToast(`Failed: ${result.error}`, 'error');
+      }
+    }
+  }
+});
+
 searchInput.addEventListener('input', () => {
   state.search = searchInput.value;
   searchClear.style.display = state.search ? 'block' : 'none';
   applyFilters();
+});
+
+// Auto-focus search input when the window is shown
+window.addEventListener('focus', () => {
+  searchInput.focus();
+  searchInput.select();
 });
 
 searchClear.addEventListener('click', () => {

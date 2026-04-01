@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut } = require('electron');
 const { exec } = require('child_process');
 const path = require('path');
 
@@ -6,10 +6,10 @@ let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1100,
-    height: 720,
+    width: 1000,
+    height: 650,
     minWidth: 800,
-    minHeight: 550,
+    minHeight: 500,
     titleBarStyle: 'hiddenInset',
     backgroundColor: '#0d0d0f',
     vibrancy: 'under-window',
@@ -21,6 +21,7 @@ function createWindow() {
     },
     icon: path.join(__dirname, 'assets', 'icon.png'),
     show: false,
+    center: true,
   });
 
   mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
@@ -32,9 +33,42 @@ function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+
+  // Hide window when it loses focus (optional, but very "Spotlight-like")
+  mainWindow.on('blur', () => {
+    if (mainWindow && !mainWindow.webContents.isDevToolsOpened()) {
+      // mainWindow.hide(); // Uncomment if you want it to hide automatically on blur
+    }
+  });
 }
 
+// ─── Shortcut Toggle ───────────────────────────────────────────────────────
+function toggleWindow() {
+  if (!mainWindow) {
+    createWindow();
+    return;
+  }
+
+  if (mainWindow.isVisible()) {
+    if (mainWindow.isFocused()) {
+      mainWindow.hide();
+    } else {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  } else {
+    mainWindow.show();
+    mainWindow.focus();
+  }
+}
+
+// ─── IPC: Hide Window ────────────────────────────────────────────────────────
+ipcMain.on('hide-window', () => {
+  if (mainWindow) mainWindow.hide();
+});
+
 // ─── IPC: Get Ports ──────────────────────────────────────────────────────────
+// ... (rest of the file remains same, will just append handlers below)
 ipcMain.handle('get-ports', async () => {
   return new Promise((resolve) => {
     exec('lsof -i -P -n | grep LISTEN', (err, stdout) => {
@@ -115,7 +149,22 @@ ipcMain.handle('get-process-info', async (event, pid) => {
   });
 });
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createWindow();
+
+  // Register Global Shortcut: Cmd + Shift + P
+  const ret = globalShortcut.register('CommandOrControl+Shift+P', () => {
+    toggleWindow();
+  });
+
+  if (!ret) {
+    console.log('Registration failed');
+  }
+});
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
@@ -123,4 +172,8 @@ app.on('window-all-closed', () => {
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  else if (mainWindow) {
+    mainWindow.show();
+    mainWindow.focus();
+  }
 });
