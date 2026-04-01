@@ -177,7 +177,7 @@ app.whenReady().then(() => {
   createQuickWindow();
 
   // Register Global Shortcut: Cmd + Shift + P
-  const ret = globalShortcut.register('CommandOrControl+Shift+P', () => {
+  const ret = globalShortcut.register('CommandOrControl+Shift+P', (e) => {
     toggleQuickKill();
   });
 
@@ -194,10 +194,12 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
+// Activate is triggered when clicking the Dock icon
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createMainWindow();
     createQuickWindow();
+    // We don't call show() here, we let the user decide
   } else if (mainWindow) {
     mainWindow.show();
     mainWindow.focus();
